@@ -5,29 +5,6 @@ from random import *
 import cv2
 import numpy as np
 
-
-class SkyModel(object):
-    '''Represents the game state for Dodgy Game'''
-
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-
-        self.BIRD_Y = 0
-        self.USER_X = 250
-        self.RADIUS = 10
-        self.bird = Bird(randint(0, 1000), self.BIRD_Y, self.RADIUS)
-        self.bird2 = Bird(randint(600, 1000), self.BIRD_Y - 500, self.RADIUS-9)
-        self.user = User(self.USER_X, 1000, 140)
-        self.heart = Heart()
-
-    def update(self):
-        '''Update the model state'''
-        self.bird.update()
-        self.bird2.update()
-   
-
-
 class View(object):
     """ Provides a view of the Dodgy Game model in a pygame
         window """
@@ -39,9 +16,8 @@ class View(object):
         self.end = pygame.transform.scale(pygame.image.load('gameover.png'), (1000,1000))
         self.eyes = pygame.transform.scale(
             pygame.image.load('eyes.png'), (self.model.user.radius, self.model.user.radius))
-        self.life = pygame.transform.scale(pygame.image.load('red-heart.png'), 
-            (self.model.heart.width/(self.model.heart.count+1),
-                self.model.heart.height/2))
+        self.lives = 3
+        
 
     def draw(self):
         """ Draw the game to the pygame window """
@@ -74,9 +50,12 @@ class View(object):
         self.screen.blit(
             self.eyes, (self.model.user.center_x - 70, self.model.user.center_y - 140))
         
-        pygame.draw.rect(self.screen, pygame.Color('white'), (self.model.heart.left, self.model.heart.top, self.model.heart.width, self.model.heart.height))
-        self.screen.blit(self.life, (self.model.heart.left+self.model.heart.width/(self.model.heart.count+1), self.model.heart.top + 
-                self.model.heart.height/2))
+
+        for heart in self.model.hearts[0:self.lives]:
+            h = pygame.transform.scale(
+                pygame.image.load('heart.png'), (heart.width, heart.height))
+            self.screen.blit(h, (heart.left, heart.top))
+            
 
 
         if (self.model.bird.center_x + self.model.bird.radius >= self.model.user.center_x - self.model.user.radius)  and \
@@ -84,16 +63,48 @@ class View(object):
                 (self.model.bird.center_x - self.model.bird.radius <= self.model.user.center_x + self.model.user.radius - 20 )  and \
                 (self.model.bird.center_y + self.model.bird.radius >= self.model.user.center_y - (self.model.user.radius - 20)):
             # determining if a collision happened
-            self.screen.blit(self.end, (0, 0))
+            # self.screen.blit(self.end, (0, 0))
+            self.lives -= 1
 
         if (self.model.bird2.center_x + self.model.bird2.radius >= self.model.user.center_x - self.model.user.radius)  and \
                 (self.model.bird2.center_y + self.model.bird2.radius >= self.model.user.center_y - (self.model.user.radius - 20)) and \
                 (self.model.bird2.center_x - self.model.bird2.radius <= self.model.user.center_x + self.model.user.radius - 20 )  and \
                 (self.model.bird2.center_y + self.model.bird2.radius >= self.model.user.center_y - (self.model.user.radius - 20)):
             # determining if a collision happened
+            # self.screen.blit(self.end, (0, 0))
+            self.lives -= 1
+        if self.lives == 0:
             self.screen.blit(self.end, (0, 0))
+            
+
         pygame.display.update()
 
+class SkyModel(object):
+    '''Represents the game state for Dodgy Game'''
+
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+        self.BIRD_Y = 0
+        self.USER_X = 250
+        self.RADIUS = 10
+        self.HEART_WIDTH = 100
+        self.HEART_HEIGHT = 100
+        self.MARGIN = 20
+        self.bird = Bird(randint(0, 1000), self.BIRD_Y, self.RADIUS)
+        self.bird2 = Bird(randint(600, 1000), self.BIRD_Y - 500, self.RADIUS-9)
+        self.user = User(self.USER_X, 1000, 140)
+        
+        self.hearts = []
+        for left in range(self.MARGIN, 3*(self.MARGIN+self.HEART_WIDTH),self.MARGIN+self.HEART_WIDTH):
+            self.hearts.append(Heart(left, self.MARGIN, self.HEART_WIDTH, self.HEART_HEIGHT)) 
+
+
+    def update(self):
+        '''Update the model state'''
+        self.bird.update()
+        self.bird2.update()
 
 class Bird(object):
     """ Represents a bird in dodging game """
@@ -133,12 +144,11 @@ class User(object):
 class Heart(object):
     '''represents the number of lives that the user has left. The player always starts with 3 lives'''
 
-    def __init__(self, left = 10, top = 10, width = 50, height = 30, count = 3):
+    def __init__(self, left, top , width, height):
         self.left = left
         self.top = top
         self.width = width
         self.height = height
-        self.count = count
 
 class Movement(object):
     def __init__(self, model):
