@@ -18,7 +18,28 @@ class View(object):
             pygame.image.load('eyes.png'), (self.model.user.radius, self.model.user.radius))
         self.lives = 3
         
+    def draw_button(self):
+        self.screen.fill(pygame.Color(135, 206, 250))
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        coords = pygame.Rect(self.model.button.x, self.model.button.y, self.model.button.w, self.model.button.h)
+        ac = pygame.Color('white')
+        ic = pygame.Color('yellow')
 
+        if self.model.button.x+self.model.button.w > mouse[0] > self.model.button.x and self.model.button.y + self.model.button.h > mouse[1] > self.model.button.y:
+            pygame.draw.rect(self.screen, ac, coords)
+
+        else: 
+            pygame.draw.rect(self.screen, ic, coords)
+
+        font = pygame.font.SysFont("monospace", 140)
+        label = font.render(self.model.button.msg, 1, (135, 206, 255))
+        text_pos = label.get_rect()
+        text_pos.centerx = coords.centerx
+        text_pos.centery = coords.centery
+        
+        self.screen.blit(label, (text_pos[0], text_pos[1]))
+        pygame.display.update()
     def draw(self):
         """ Draw the game to the pygame window """
         self.screen.fill(pygame.Color(135, 206, 250))  # sky
@@ -95,6 +116,7 @@ class SkyModel(object):
         self.bird = Bird(randint(0, 1000), self.BIRD_Y, self.RADIUS)
         self.bird2 = Bird(randint(600, 1000), self.BIRD_Y - 500, self.RADIUS-9)
         self.user = User(self.USER_X, 1000, 140)
+        self.button = Button('START', self.width, self.height)
         
         self.hearts = []
         for left in range(self.MARGIN, 3*(self.MARGIN+self.HEART_WIDTH),self.MARGIN+self.HEART_WIDTH):
@@ -105,6 +127,15 @@ class SkyModel(object):
         '''Update the model state'''
         self.bird.update()
         self.bird2.update()
+
+class Button(object):
+    '''represents the initial screen with a start button'''
+    def __init__(self, msg, screenw, screenh, w = 500, h = 300): #left is (screen width - button width)/2 similar for top
+        self.msg = msg
+        self.x = (screenw-w)/2
+        self.y = (screenh-h)/2
+        self.w = w
+        self.h = h
 
 class Bird(object):
     """ Represents a bird in dodging game """
@@ -176,7 +207,14 @@ if __name__ == '__main__':
     view = View(model, size)
     movement = Movement(model)
     running = True
-    
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                running = False
+                break
+            break
+        break
+                
     while running:
         ret, frame = movement.cap.read()
         faces = movement.face_cascade.detectMultiScale(
@@ -188,7 +226,7 @@ if __name__ == '__main__':
                 movement.handle_event(event)
         model.update()
         
-        view.draw()
+        view.draw_button()
         time.sleep(.01)
     movement.cap.release()
     cv2.destroyAllWindows()
