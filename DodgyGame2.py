@@ -72,10 +72,10 @@ class View(object):
             self.eyes, (self.model.user.center_x - 70, self.model.user.center_y - 140))
         
 
-        for heart in self.model.hearts[0:self.lives]:
-            h = pygame.transform.scale(
-                pygame.image.load('heart.png'), (heart.width, heart.height))
-            self.screen.blit(h, (heart.left, heart.top))
+        # for heart in self.model.hearts[0:self.lives]:
+        #     h = pygame.transform.scale(
+        #         pygame.image.load('heart.png'), (heart.width, heart.height))
+        #     self.screen.blit(h, (heart.left, heart.top))
             
 
 
@@ -83,20 +83,24 @@ class View(object):
                 (self.model.bird.center_y + self.model.bird.radius >= self.model.user.center_y - (self.model.user.radius - 20)) and \
                 (self.model.bird.center_x - self.model.bird.radius <= self.model.user.center_x + self.model.user.radius - 20 )  and \
                 (self.model.bird.center_y + self.model.bird.radius >= self.model.user.center_y - (self.model.user.radius - 20)):
-            # determining if a collision happened
-            # self.screen.blit(self.end, (0, 0))
+            
             self.lives -= 1
 
         if (self.model.bird2.center_x + self.model.bird2.radius >= self.model.user.center_x - self.model.user.radius)  and \
                 (self.model.bird2.center_y + self.model.bird2.radius >= self.model.user.center_y - (self.model.user.radius - 20)) and \
                 (self.model.bird2.center_x - self.model.bird2.radius <= self.model.user.center_x + self.model.user.radius - 20 )  and \
                 (self.model.bird2.center_y + self.model.bird2.radius >= self.model.user.center_y - (self.model.user.radius - 20)):
-            # determining if a collision happened
-            # self.screen.blit(self.end, (0, 0))
+            
             self.lives -= 1
+
         if self.lives == 0:
             self.screen.blit(self.end, (0, 0))
             
+
+        for heart in self.model.hearts[0:self.lives]:
+            h = pygame.transform.scale(
+                pygame.image.load('heart.png'), (heart.width, heart.height))
+            self.screen.blit(h, (heart.left, heart.top))
 
         pygame.display.update()
 
@@ -199,6 +203,9 @@ class Movement(object):
                 self.model.user.center_x = 1000 - (2 * x)
 
 
+
+
+
 if __name__ == '__main__':
     pygame.init()
     size = (1000, 1000)
@@ -206,27 +213,41 @@ if __name__ == '__main__':
     model = SkyModel(size[0], size[1])
     view = View(model, size)
     movement = Movement(model)
-    running = True
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                running = False
-                break
-            break
-        break
-                
-    while running:
-        ret, frame = movement.cap.read()
-        faces = movement.face_cascade.detectMultiScale(
-            frame, scaleFactor=1.2, minSize=(20, 20))
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                running = False
-            else:
-                movement.handle_event(event)
-        model.update()
-        
-        view.draw_button()
-        time.sleep(.01)
+
+    screen_on = True
+    while screen_on:
+        starting = True
+        while starting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    starting = False
+                    running = False
+                    screen_on = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    starting = False
+                    running = True
+            view.draw_button()
+            time.sleep(.01)
+                    
+        while running:
+            ret, frame = movement.cap.read()
+            faces = movement.face_cascade.detectMultiScale(
+                frame, scaleFactor=1.2, minSize=(20, 20))
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    running = False
+                    screen_on = False
+                else:
+                    movement.handle_event(event)
+                    if view.lives == 0:
+                        view.screen.blit(view.end, (0, 0))
+                        time.sleep(1)
+                        starting = True
+                        running = False
+
+            model.update()
+            
+            view.draw()
+            time.sleep(.01)
     movement.cap.release()
     cv2.destroyAllWindows()
