@@ -12,6 +12,7 @@ class View(object):
     def __init__(self, model, size):
         """ Initialize with the specified model """
         self.model = model
+        self.size = size
         self.screen = pygame.display.set_mode(size)
         self.end = pygame.transform.scale(pygame.image.load('gameover.png'), (1000,1000))
         self.eyes = pygame.transform.scale(
@@ -70,13 +71,7 @@ class View(object):
                            self.model.user.radius)
         self.screen.blit(
             self.eyes, (self.model.user.center_x - 70, self.model.user.center_y - 140))
-        
 
-        # for heart in self.model.hearts[0:self.lives]:
-        #     h = pygame.transform.scale(
-        #         pygame.image.load('heart.png'), (heart.width, heart.height))
-        #     self.screen.blit(h, (heart.left, heart.top))
-            
 
 
         if (self.model.bird.center_x + self.model.bird.radius >= self.model.user.center_x - self.model.user.radius)  and \
@@ -84,24 +79,27 @@ class View(object):
                 (self.model.bird.center_x - self.model.bird.radius <= self.model.user.center_x + self.model.user.radius - 20 )  and \
                 (self.model.bird.center_y + self.model.bird.radius >= self.model.user.center_y - (self.model.user.radius - 20)):
             
+            self.model.bird.center_y = self.size[1]+1
             self.lives -= 1
+            
 
         if (self.model.bird2.center_x + self.model.bird2.radius >= self.model.user.center_x - self.model.user.radius)  and \
                 (self.model.bird2.center_y + self.model.bird2.radius >= self.model.user.center_y - (self.model.user.radius - 20)) and \
                 (self.model.bird2.center_x - self.model.bird2.radius <= self.model.user.center_x + self.model.user.radius - 20 )  and \
                 (self.model.bird2.center_y + self.model.bird2.radius >= self.model.user.center_y - (self.model.user.radius - 20)):
             
-            self.lives -= 1
+            self.model.bird2.center_y = self.size[1]+1
+            self.lives -= 1  
 
-        if self.lives == 0:
-            self.screen.blit(self.end, (0, 0))
-            
 
         for heart in self.model.hearts[0:self.lives]:
             h = pygame.transform.scale(
                 pygame.image.load('heart.png'), (heart.width, heart.height))
             self.screen.blit(h, (heart.left, heart.top))
 
+        pygame.display.update()
+    def gameover(self):
+        self.screen.blit(self.end, (0, 0))
         pygame.display.update()
 
 class SkyModel(object):
@@ -235,19 +233,30 @@ if __name__ == '__main__':
                 frame, scaleFactor=1.2, minSize=(20, 20))
             for event in pygame.event.get():
                 if event.type == QUIT:
+                    ending = False
                     running = False
                     screen_on = False
                 else:
                     movement.handle_event(event)
                     if view.lives == 0:
-                        view.screen.blit(view.end, (0, 0))
-                        time.sleep(1)
-                        starting = True
+                        ending = True
                         running = False
 
             model.update()
             
             view.draw()
+            time.sleep(.01)
+
+        while ending:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    screen_on = False
+                    ending = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    starting = True
+                    ending = False
+
+            view.gameover()
             time.sleep(.01)
     movement.cap.release()
     cv2.destroyAllWindows()
